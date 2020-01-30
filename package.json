@@ -1,0 +1,26 @@
+{
+  "name": "gitcommitconverter",
+  "version": "1.0.0",
+  "description": "A converter that will turn a git repo commit history into a readme file",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DaltonHart/Git-Commit-Converter.git"
+  },
+  "keywords": [
+    "git",
+    "converter"
+  ],
+  "author": "dalton hart daltonhart.j@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DaltonHart/Git-Commit-Converter/issues"
+  },
+  "homepage": "https://github.com/DaltonHart/Git-Commit-Converter#readme",
+  "dependencies": {
+    "nodegit": "^0.26.4"
+  }
+}
