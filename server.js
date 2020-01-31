@@ -1,6 +1,7 @@
 // External Modules
 const Git = require('nodegit');
 const fs = require('fs');
+
 // Git.Clone(
 //   'https://github.com/DaltonHart/awesome-dotfiles.git',
 //   'repos/awesome'
@@ -11,30 +12,41 @@ const fs = require('fs');
 
 const openRepo = async location => {
   const repo = await Git.Repository.open(location);
-  // Open the master branch.
   const firstCommitOnMaster = await repo.getMasterCommit();
-  // Create a new history event emitter.
   const history = await firstCommitOnMaster.history();
-  // Listen for commit events from the history.
   history.on('commit', async commit => {
-    console.log('----COMMIT----');
     const generatedCommit = await generateCommit(commit);
     //
-    fs.writeFile(
-      'output.json',
-      JSON.stringify(generatedCommit),
-      'utf8',
-      function(err) {
-        if (err) {
-          console.log('An error occured while writing JSON Object to File.');
-          return console.log(err);
-        }
-        console.log('JSON file has been saved.');
+    fs.readFile(`./${location}/output.json`, (err, data) => {
+      if (err) {
+        fs.writeFile(
+          `./${location}/output.json`,
+          JSON.stringify({ name: location }, null, 2),
+          'utf8',
+          err => {
+            if (err) console.log(err);
+          }
+        );
+        data = JSON.stringify({ name: location });
       }
-    );
+
+      const json = JSON.parse(data);
+      json[commit.sha()] = generatedCommit;
+      fs.writeFile(
+        `./${location}/output.json`,
+        JSON.stringify(json, null, 2),
+        'utf8',
+        err => {
+          if (err) {
+            console.log('An error occured while writing JSON Object to File.');
+            return console.log(err);
+          }
+          console.log('JSON file has been saved.');
+        }
+      );
+    });
   });
 
-  // Start emitting events.
   history.start();
 };
 
@@ -48,9 +60,11 @@ const generateCommit = async commit => {
   };
   //
   const diffList = await commit.getDiff();
-  diffList.forEach(async diff => {
+  for (let i = 0; i < diffList.length; i++) {
+    const diff = diffList[i];
     const patches = await diff.patches();
-    patches.forEach(async patch => {
+    for (let j = 0; j < patches.length; j++) {
+      const patch = patches[j];
       const hunks = await patch.hunks();
       hunks.forEach(async hunk => {
         const lines = await hunk.lines();
@@ -63,7 +77,8 @@ const generateCommit = async commit => {
           )
         });
       });
-    });
-  });
+    }
+  }
+
   return Promise.resolve(log);
 };
