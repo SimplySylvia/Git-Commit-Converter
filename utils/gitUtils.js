@@ -3,52 +3,43 @@ const Git = require('nodegit');
 const fs = require('fs');
 const db = require('../models');
 
-const getRepo = (url, name) => {
-  Git.Clone(url, `repos/${name}`).then(repository => {
+const getRepo = async (url, name) => {
+  try {
+    const clonedRepo = await Git.Clone(url, `repos/${name}`);
     // Work with the repository object here.
-    console.log(repository);
-  });
+    console.log(clonedRepo);
+    const newRepo = await db.Repo.create({
+      name,
+      url,
+      location: `repos/${name}`
+    });
+    // console.log(newRepo);
+    compileCommits(clonedRepo, newRepo);
+  } catch (err) {
+    console.log(err);
+  }
 };
 
-const compileCommits = async location => {
-  const repo = await Git.Repository.open(location);
-  const firstCommitOnMaster = await repo.getMasterCommit();
-  const history = await firstCommitOnMaster.history();
-  history.on('commit', async commit => {
-    const generatedCommit = await generateCommit(commit);
-    //
-    fs.readFile(`../${location}/output.json`, (err, data) => {
-      if (err) {
-        console.log(err);
-        fs.writeFile(
-          `../${location}/output.json`,
-          JSON.stringify({ name: location }, null, 2),
-          'utf8',
-          err => {
-            if (err) console.log(err);
-          }
-        );
-        data = JSON.stringify({ name: location });
-      }
-
-      const json = JSON.parse(data);
-      json[commit.sha()] = generatedCommit;
-      fs.writeFile(
-        `../${location}/output.json`,
-        JSON.stringify(json, null, 2),
-        'utf8',
-        err => {
-          if (err) {
-            console.log('An error occured while writing JSON Object to File.');
-            return console.log(err);
-          }
-          console.log('JSON file has been saved.');
+const compileCommits = async (repo, newRepo) => {
+  try {
+    const firstCommitOnMaster = await repo.getMasterCommit();
+    const history = await firstCommitOnMaster.history();
+    history.on('end', async commits => {
+      for (let i = 0; i < commits.length; i++) {
+        const commit = commits[i];
+        const generatedCommit = await generateCommit(commit);
+        //
+        newRepo.commits.push(generatedCommit);
+        if (i === commits.length - 1) {
+          newRepo.save();
         }
-      );
+      }
     });
-  });
 
-  history.start();
+    history.start();
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const generateCommit = async commit => {
@@ -65,7 +56,8 @@ const generateCommit = async commit => {
     for (let j = 0; j < patches.length; j++) {
       const patch = patches[j];
       const hunks = await patch.hunks();
-      hunks.forEach(async hunk => {
+      for (let k = 0; k < hunks.length; k++) {
+        const hunk = hunks[k];
         const lines = await hunk.lines();
         log.diffList.push({
           oldFile: patch.oldFile().path(),
@@ -75,11 +67,12 @@ const generateCommit = async commit => {
             line => String.fromCharCode(line.origin()) + line.content().trim()
           )
         });
-      });
+      }
+    }
+    if (i === diffList.length - 1) {
+      return Promise.resolve(log);
     }
   }
-
-  return Promise.resolve(log);
 };
 
 module.exports = {

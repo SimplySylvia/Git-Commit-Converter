@@ -13,4 +13,6 @@ mongoose
   })
   .catch(err => console.log(err));
 
-module.exports = {};
+module.exports = {
+  Repo: require('./Repo')
+};
