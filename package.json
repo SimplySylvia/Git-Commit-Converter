@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/DaltonHart/Git-Commit-Converter#readme",
   "dependencies": {
+    "mongoose": "^5.8.10",
     "nodegit": "^0.26.4"
   }
 }

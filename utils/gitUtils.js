@@ -1,6 +1,7 @@
 // External Modules
 const Git = require('nodegit');
 const fs = require('fs');
+const db = require('../models');
 
 const getRepo = (url, name) => {
   Git.Clone(url, `repos/${name}`).then(repository => {
@@ -56,7 +57,7 @@ const generateCommit = async commit => {
     message: commit.message(),
     diffList: []
   };
-  //
+
   const diffList = await commit.getDiff();
   for (let i = 0; i < diffList.length; i++) {
     const diff = diffList[i];
