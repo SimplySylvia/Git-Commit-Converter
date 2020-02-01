@@ -12,6 +12,8 @@ const app = express();
 app.use(bodyparser.json());
 
 /* --- Routes --- */
+
+// --- REPO ROUTES
 app.get('/api/v1/repos', async (req, res) => {
   try {
     const allRepos = await db.Repo.find({});
